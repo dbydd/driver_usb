@@ -10,7 +10,6 @@ use alloc::boxed::Box;
 use alloc::slice;
 use alloc::vec;
 use alloc::vec::Vec;
-use axhal::cpu::this_cpu_id;
 use log::debug;
 use log::trace;
 pub use xhci::ring::trb;

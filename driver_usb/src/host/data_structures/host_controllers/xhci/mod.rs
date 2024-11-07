@@ -1,5 +1,4 @@
 use alloc::{borrow::ToOwned, boxed::Box, sync::Arc, vec, vec::Vec};
-use axhal::time;
 use context::{DeviceContextList, ScratchpadBufferArray};
 use core::{
     alloc::{Allocator, Layout},

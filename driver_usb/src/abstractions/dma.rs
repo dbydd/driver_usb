@@ -8,7 +8,6 @@ use core::{
 };
 
 use alloc::vec::Vec;
-use axalloc::global_no_cache_allocator;
 use log::debug;
 
 ///DMA: it used in multiple situation. Sometimes we need A bunch of Data Transfer, Sometimes we

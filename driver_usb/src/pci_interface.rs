@@ -1,7 +1,5 @@
 use core::usize;
 
-use axalloc::global_no_cache_allocator;
-use axhal::mem::{phys_to_virt, virt_to_phys};
 use bit_field::BitField;
 use driver_common::BaseDriverOps;
 use log::debug;
@@ -17,10 +15,10 @@ pub type XHCIPCIDriver<'a> = USBSystem<'a, PlatAbstraction>;
 #[derive(Clone, Debug)]
 pub struct PlatAbstraction;
 
-impl OSAbstractions for PlatAbstraction {
+impl<T> OSAbstractions for PlatAbstraction {
     type VirtAddr = VirtAddr;
 
-    type DMA = axalloc::GlobalNoCacheAllocator; //todo: fix nocache allocator!
+    type DMA = T; //todo: fix nocache allocator!
 
     const PAGE_SIZE: usize = 4096;
 
