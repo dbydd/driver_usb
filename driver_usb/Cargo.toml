@@ -18,8 +18,8 @@ pci = ["dep:pci_types","driver_common",]
 [dependencies]
 log = "0.4"
 xhci = { git = "https://github.com/dbydd/xhci.git" }
-memory_addr = { git = "https://github.com/Starry-OS/memory_addr.git" }
-spinlock = { git = "https://github.com/Starry-OS/spinlock.git" }
+memory_addr = { git = "https://github.com/kern-crates/memory_addr.git" }
+spinlock = { git = "https://github.com/kern-crates/spinlock.git" }
 tock-registers = "0.9.0"
 bit_field = "0.10"
 num-derive = "0.4.0"
@@ -29,5 +29,5 @@ cfg-if = "1.0.0"
 
 
 # arceos
-driver_common = { git = "https://github.com/Starry-OS/driver_common.git" ,optional=true }
+driver_common = { git = "https://github.com/kern-crates/driver_common.git" ,optional=true }
 pci_types = { version = "0.6", optional = true }
