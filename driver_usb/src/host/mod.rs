@@ -1,7 +1,7 @@
 use alloc::{boxed::Box, collections::binary_heap::Iter, sync::Arc, vec::Vec};
 use data_structures::host_controllers::{xhci::XHCI, Controller, ControllerArc};
 use log::{debug, trace};
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 use xhci::ring::trb::event;
 
 use crate::{
@@ -43,7 +43,7 @@ pub struct USBHostSystem<O>
 where
     O: PlatformAbstractions,
 {
-    config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+    config: Arc<Spinlock<USBSystemConfig<O>>>,
     controller: ControllerArc<O>,
 }
 
@@ -52,8 +52,8 @@ where
     O: PlatformAbstractions + 'static,
 {
     /// Create a new USB Host Controller Layer Instance
-    pub fn new(config: Arc<SpinNoIrq<USBSystemConfig<O>>>) -> crate::err::Result<Self> {
-        let controller = Arc::new(SpinNoIrq::new({
+    pub fn new(config: Arc<Spinlock<USBSystemConfig<O>>>) -> crate::err::Result<Self> {
+        let controller = Arc::new(Spinlock::new({
             let xhciregisters: Box<(dyn Controller<O> + 'static)> = {
                 if cfg!(feature = "xhci") {
                     debug!("new xhci device host!");

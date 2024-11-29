@@ -8,7 +8,7 @@ use alloc::{
     vec::Vec,
 };
 use log::{debug, trace};
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 use tock_registers::interfaces::Writeable;
 use xhci::{context::EndpointType, ring::trb::transfer::Direction};
 
@@ -58,7 +58,7 @@ where
     O: PlatformAbstractions,
 {
     device_slot_id: usize,
-    config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+    config: Arc<Spinlock<USBSystemConfig<O>>>,
     interrupt_endpoints: Vec<TopologicalUSBDescriptorEndpoint>,
     isoch_endpoint: Option<usize>,
     uvc_control_model: UVCControlInterfaceModel,
@@ -69,8 +69,8 @@ where
     config_value: usize, // same
     send_receive_state: BasicSendReceiveStateMachine,
     lifecycle_machine: ExtraLifeCycle,
-    receiption_buffer: Option<SpinNoIrq<DMA<[u8], O::DMA>>>,
-    control_blocks: VecDeque<SpinNoIrq<DMA<UVCStreamControlBlock, O::DMA>>>,
+    receiption_buffer: Option<Spinlock<DMA<[u8], O::DMA>>>,
+    control_blocks: VecDeque<Spinlock<DMA<UVCStreamControlBlock, O::DMA>>>,
 }
 
 impl<'a, O> USBSystemDriverModule<'a, O> for GenericUVCDriverModule
@@ -80,8 +80,8 @@ where
     fn should_active(
         &self,
         independent_dev: &mut DriverIndependentDeviceInstance<O>,
-        config: Arc<SpinNoIrq<crate::USBSystemConfig<O>>>,
-    ) -> Option<Vec<Arc<SpinNoIrq<dyn USBSystemDriverModuleInstance<'a, O>>>>> {
+        config: Arc<Spinlock<crate::USBSystemConfig<O>>>,
+    ) -> Option<Vec<Arc<Spinlock<dyn USBSystemDriverModuleInstance<'a, O>>>>> {
         if let MightBeInited::Inited(desc) = &*independent_dev.descriptors
             && let ParserMetaData::UVC(_) = desc.metadata
         {
@@ -137,7 +137,7 @@ where
 {
     pub fn new(
         device_slot_id: usize,
-        config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+        config: Arc<Spinlock<USBSystemConfig<O>>>,
         function: Vec<
             Vec<(
                 Interface,
@@ -149,7 +149,7 @@ where
         alternative_val: usize,
         config_value: usize,
         descriptors: Arc<MightBeInited<TopologicalUSBDescriptorRoot>>,
-    ) -> Arc<SpinNoIrq<dyn USBSystemDriverModuleInstance<'a, O>>> {
+    ) -> Arc<Spinlock<dyn USBSystemDriverModuleInstance<'a, O>>> {
         let uvccontrol_interface_model = function
             .iter()
             .find_map(|a| {
@@ -221,7 +221,7 @@ where
         });
 
         // trace!("goted function:{:#?}", function);
-        Arc::new(SpinNoIrq::new(Self {
+        Arc::new(Spinlock::new(Self {
             config: config.clone(),
             interrupt_endpoints: function
                 .iter()
@@ -317,7 +317,7 @@ where
         let get_frame_size = self
             .uvc_stream_model
             .get_frame_size_by_index(format_index, frame_index);
-        self.receiption_buffer = Some(SpinNoIrq::new(DMA::new_vec(
+        self.receiption_buffer = Some(Spinlock::new(DMA::new_vec(
             0u8,
             get_frame_size,
             O::PAGE_SIZE,
@@ -353,7 +353,7 @@ where
                 ctrl_block.max_payload_transfer_size = 3072;
 
                 let buffer = ctrl_block.to_buffer(StreamControlBlockVersionToSizeMap::Ver1p0);
-                self.control_blocks.push_back(SpinNoIrq::new(ctrl_block));
+                self.control_blocks.push_back(Spinlock::new(ctrl_block));
                 buffer
             };
 
@@ -471,7 +471,7 @@ where
 
                         let buffer =
                             ctrl_block.to_buffer(StreamControlBlockVersionToSizeMap::Ver1p0);
-                        self.control_blocks.push_back(SpinNoIrq::new(ctrl_block));
+                        self.control_blocks.push_back(Spinlock::new(ctrl_block));
                         buffer
                     };
 
@@ -514,7 +514,7 @@ where
 
                         let buffer =
                             ctrl_block.to_buffer(StreamControlBlockVersionToSizeMap::Ver1p0);
-                        self.control_blocks.push_back(SpinNoIrq::new(ctrl_block));
+                        self.control_blocks.push_back(Spinlock::new(ctrl_block));
                         buffer
                     };
 

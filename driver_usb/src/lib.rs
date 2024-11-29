@@ -23,7 +23,7 @@ use cfg_if::cfg_if;
 use glue::driver_independent_device_instance::DriverIndependentDeviceInstance;
 use host::{data_structures::MightBeInited, USBHostSystem};
 use log::{error, trace};
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 use usb::{
     descriptors::{
         construct_control_transfer_type, parser::RawDescriptorParser,
@@ -34,6 +34,7 @@ use usb::{
     urb::{RequestedOperation, URB},
     USBDriverSystem,
 };
+
 use xhci::ring::trb::transfer::{Direction, TransferType};
 
 extern crate alloc;
@@ -123,7 +124,7 @@ where
     O: PlatformAbstractions,
 {
     platform_abstractions: O,
-    config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+    config: Arc<Spinlock<USBSystemConfig<O>>>,
     host_driver_layer: USBHostSystem<O>,
     usb_driver_layer: USBDriverSystem<'a, O>,
     driver_independent_devices: Vec<DriverIndependentDeviceInstance<O>>,
@@ -135,7 +136,7 @@ where
 {
     /// Creates a new USB system
     pub fn new(config: USBSystemConfig<O>) -> Self {
-        let config = Arc::new(SpinNoIrq::new(config));
+        let config = Arc::new(Spinlock::new(config));
         Self {
             config: config.clone(),
             platform_abstractions: config.clone().lock().os.clone(),
@@ -152,7 +153,7 @@ where
     /// it Perform initialze operations of host controller devices and register all implemented USB drivers
     pub fn init(&mut self) -> &mut Self {
         trace!("initializing!");
-        self.host_driver_layer.init();
+        USBHostSystem::<O>::init(&self.host_driver_layer);
         self.usb_driver_layer.init();
         trace!("usb system init complete");
         self
@@ -166,7 +167,7 @@ where
         {
             self.driver_independent_devices.clear(); //need to have a merge algorithm for hot plug
             let mut after = Vec::new();
-            self.host_driver_layer.probe(|device| after.push(device));
+            self.host_driver_layer.probe(|device:DriverIndependentDeviceInstance<O>| after.push(device));
 
             for driver in after {
                 self.new_device(driver)

@@ -1,7 +1,7 @@
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use drivers::driverapi::{USBSystemDriverModule, USBSystemDriverModuleInstance};
 use log::trace;
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 use urb::URB;
 
 use crate::{
@@ -33,16 +33,16 @@ pub struct USBDriverSystem<'a, O>
 where
     O: PlatformAbstractions,
 {
-    config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+    config: Arc<Spinlock<USBSystemConfig<O>>>,
     managed_modules: DriverContainers<'a, O>,
-    driver_device_instances: Vec<Arc<SpinNoIrq<dyn USBSystemDriverModuleInstance<'a, O>>>>,
+    driver_device_instances: Vec<Arc<Spinlock<dyn USBSystemDriverModuleInstance<'a, O>>>>,
 }
 
 impl<'a, O> USBDriverSystem<'a, O>
 where
     O: PlatformAbstractions + 'static,
 {
-    pub fn new(config: Arc<SpinNoIrq<USBSystemConfig<O>>>) -> Self {
+    pub fn new(config: Arc<Spinlock<USBSystemConfig<O>>>) -> Self {
         Self {
             config,
             managed_modules: DriverContainers::new(),

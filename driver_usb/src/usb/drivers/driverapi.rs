@@ -1,7 +1,7 @@
 use core::fmt::Debug;
 
 use alloc::{sync::Arc, vec::Vec};
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 use xhci::ring::trb::event;
 
 use crate::{
@@ -18,8 +18,8 @@ where
     fn should_active(
         &self,
         independent_dev: &mut DriverIndependentDeviceInstance<O>,
-        config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
-    ) -> Option<Vec<Arc<SpinNoIrq<dyn USBSystemDriverModuleInstance<'a, O>>>>>;
+        config: Arc<Spinlock<USBSystemConfig<O>>>,
+    ) -> Option<Vec<Arc<Spinlock<dyn USBSystemDriverModuleInstance<'a, O>>>>>;
 
     fn preload_module(&self);
 }

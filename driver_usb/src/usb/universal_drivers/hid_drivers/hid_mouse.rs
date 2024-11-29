@@ -5,7 +5,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use log::trace;
 use num_traits::FromPrimitive;
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 use xhci::context::EndpointType;
 use xhci::ring::trb::transfer::Direction;
 
@@ -40,7 +40,7 @@ pub enum ReportDescState<O>
 where
     O: PlatformAbstractions,
 {
-    Binary(SpinNoIrq<DMA<u8, O::DMA>>),
+    Binary(Spinlock<DMA<u8, O::DMA>>),
 }
 
 pub struct HidMouseDriver<O>
@@ -48,7 +48,7 @@ pub struct HidMouseDriver<O>
 where
     O: PlatformAbstractions,
 {
-    config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+    config: Arc<Spinlock<USBSystemConfig<O>>>,
 
     bootable: usize,
     device_slot_id: usize,
@@ -59,7 +59,7 @@ where
     config_value: usize, // same
     report_descriptor: Option<ReportDescState<O>>,
     driver_state_machine: BasicSendReceiveStateMachine,
-    receiption_buffer: Option<SpinNoIrq<DMA<[u8], O::DMA>>>,
+    receiption_buffer: Option<Spinlock<DMA<[u8], O::DMA>>>,
 }
 
 impl<'a, O> HidMouseDriver<O>
@@ -70,12 +70,12 @@ where
         device_slot_id: usize,
         bootable: u8,
         endpoints: Vec<Endpoint>,
-        config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+        config: Arc<Spinlock<USBSystemConfig<O>>>,
         interface_value: usize,
         alternative_val: usize,
         config_value: usize,
-    ) -> Arc<SpinNoIrq<dyn USBSystemDriverModuleInstance<'a, O>>> {
-        Arc::new(SpinNoIrq::new(Self {
+    ) -> Arc<Spinlock<dyn USBSystemDriverModuleInstance<'a, O>>> {
+        Arc::new(Spinlock::new(Self {
             device_slot_id,
             interrupt_in_channels: {
                 endpoints
@@ -119,7 +119,7 @@ where
                 match &self.receiption_buffer {
                     Some(buffer) => buffer.lock().fill_with(|| 0u8),
                     None => {
-                        self.receiption_buffer = Some(SpinNoIrq::new(DMA::new_vec(
+                        self.receiption_buffer = Some(Spinlock::new(DMA::new_vec(
                             0u8,
                             8,
                             O::PAGE_SIZE,
@@ -225,7 +225,7 @@ where
             ));
         }
 
-        self.report_descriptor = Some(ReportDescState::<O>::Binary(SpinNoIrq::new(DMA::new(
+        self.report_descriptor = Some(ReportDescState::<O>::Binary(Spinlock::new(DMA::new(
             0u8,
             O::PAGE_SIZE,
             self.config.lock().os.dma_alloc(),
@@ -276,8 +276,8 @@ where
     fn should_active(
         &self,
         independent_dev: &mut DriverIndependentDeviceInstance<O>,
-        config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
-    ) -> Option<Vec<Arc<SpinNoIrq<dyn USBSystemDriverModuleInstance<'a, O>>>>> {
+        config: Arc<Spinlock<USBSystemConfig<O>>>,
+    ) -> Option<Vec<Arc<Spinlock<dyn USBSystemDriverModuleInstance<'a, O>>>>> {
         if let MightBeInited::Inited(inited) = &*independent_dev.descriptors {
             let device = inited.device.first().unwrap();
             return match (

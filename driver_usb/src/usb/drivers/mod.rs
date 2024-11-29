@@ -1,6 +1,6 @@
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use driverapi::USBSystemDriverModuleInstance;
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 
 use crate::{
     abstractions::PlatformAbstractions,
@@ -37,9 +37,9 @@ where
     pub fn create_for_device(
         &mut self,
         device: &mut DriverIndependentDeviceInstance<O>,
-        config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+        config: Arc<Spinlock<USBSystemConfig<O>>>,
         preparing_list: &mut Vec<Vec<URB<'a, O>>>,
-    ) -> Vec<Arc<SpinNoIrq<dyn USBSystemDriverModuleInstance<'a, O>>>> {
+    ) -> Vec<Arc<Spinlock<dyn USBSystemDriverModuleInstance<'a, O>>>> {
         let collect = self
             .drivers
             .iter()

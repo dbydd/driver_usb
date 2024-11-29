@@ -7,7 +7,7 @@ use ::xhci::{
 };
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use log::trace;
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 
 use crate::{
     abstractions::{dma::DMA, OSAbstractions, PlatformAbstractions},
@@ -24,7 +24,7 @@ pub trait Controller<O>: Send
 where
     O: PlatformAbstractions,
 {
-    fn new(config: Arc<SpinNoIrq<USBSystemConfig<O>>>) -> Self
+    fn new(config: Arc<Spinlock<USBSystemConfig<O>>>) -> Self
     where
         Self: Sized;
 
@@ -65,4 +65,4 @@ where
     fn debug_op(&mut self, dev_slot_id: usize, debug_op: Debugop) -> crate::err::Result<UCB<O>>;
 }
 
-pub(crate) type ControllerArc<O> = Arc<SpinNoIrq<Box<dyn Controller<O>>>>;
+pub(crate) type ControllerArc<O> = Arc<Spinlock<Box<dyn Controller<O>>>>;

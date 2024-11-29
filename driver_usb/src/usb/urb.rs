@@ -2,7 +2,7 @@ use core::sync::atomic::AtomicUsize;
 
 use alloc::sync::Arc;
 use log::trace;
-use spinlock::{BaseSpinLock, SpinNoIrq};
+use spinning_top::Spinlock;
 use xhci::ring::trb::event;
 
 use crate::PlatformAbstractions;
@@ -21,7 +21,7 @@ where
 {
     pub device_slot_id: usize,
     pub operation: RequestedOperation<'a>,
-    pub sender: Option<Arc<SpinNoIrq<dyn USBSystemDriverModuleInstance<'a, O>>>>,
+    pub sender: Option<Arc<Spinlock<dyn USBSystemDriverModuleInstance<'a, O>>>>,
 }
 
 impl<'a, O> core::fmt::Debug for URB<'a, O>
@@ -48,7 +48,7 @@ where
         }
     }
 
-    pub fn set_sender(&mut self, sender: Arc<SpinNoIrq<dyn USBSystemDriverModuleInstance<'a, O>>>) {
+    pub fn set_sender(&mut self, sender: Arc<Spinlock<dyn USBSystemDriverModuleInstance<'a, O>>>) {
         self.sender = Some(sender)
     }
 }

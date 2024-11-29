@@ -10,7 +10,7 @@ use core::{
 use event_ring::EventRing;
 use log::{debug, error, info, trace, warn};
 use ring::Ring;
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 use xhci::{
     accessor::Mapper,
     context::{DeviceHandler, EndpointState, EndpointType, Input, InputHandler, SlotHandler},
@@ -74,7 +74,7 @@ pub struct XHCI<O>
 where
     O: PlatformAbstractions,
 {
-    config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+    config: Arc<Spinlock<USBSystemConfig<O>>>,
     pub regs: RegistersBase,
     pub ext_list: Option<RegistersExtList>,
     max_slots: u8,
@@ -958,7 +958,7 @@ impl<O> Controller<O> for XHCI<O>
 where
     O: PlatformAbstractions,
 {
-    fn new(config: Arc<SpinNoIrq<USBSystemConfig<O>>>) -> Self
+    fn new(config: Arc<Spinlock<USBSystemConfig<O>>>) -> Self
     where
         Self: Sized,
     {

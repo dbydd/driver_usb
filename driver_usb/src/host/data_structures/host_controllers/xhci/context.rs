@@ -12,7 +12,7 @@ use core::borrow::BorrowMut;
 use core::ops::DerefMut;
 use core::{mem, num};
 use log::debug;
-use spinlock::SpinNoIrq;
+use spinning_top::Spinlock;
 use xhci::context::{Device32Byte, Input32Byte, Input64Byte, InputHandler};
 pub use xhci::context::{Device64Byte, DeviceHandler};
 const NUM_EPS: usize = 32;
@@ -24,7 +24,7 @@ pub struct DeviceContextList<O>
 where
     O: PlatformAbstractions,
 {
-    config: Arc<SpinNoIrq<USBSystemConfig<O>>>,
+    config: Arc<Spinlock<USBSystemConfig<O>>>,
     pub dcbaa: DMA<[u64; 256], O::DMA>,
     pub device_out_context_list: Vec<Device<O>>,
     pub device_input_context_list: Vec<Input<O>>,
@@ -113,7 +113,7 @@ impl<O> DeviceContextList<O>
 where
     O: PlatformAbstractions,
 {
-    pub fn new(max_slots: u8, config: Arc<SpinNoIrq<USBSystemConfig<O>>>, ctx_size: bool) -> Self {
+    pub fn new(max_slots: u8, config: Arc<Spinlock<USBSystemConfig<O>>>, ctx_size: bool) -> Self {
         let os = config.lock().os.clone();
         let a = os.dma_alloc();
 

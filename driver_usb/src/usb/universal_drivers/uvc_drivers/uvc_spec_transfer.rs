@@ -138,7 +138,7 @@ register_bitfields! {u16,
 }
 
 // Define the layout per stream
-register_bitfields! {u32,
+register_bitfields! {u64,
      pub LayoutPerStream [
         Stream0Layout OFFSET(0)  NUMBITS(16),
         Stream1Layout OFFSET(16) NUMBITS(16),
