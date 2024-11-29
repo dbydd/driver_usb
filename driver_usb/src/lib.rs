@@ -167,7 +167,8 @@ where
         {
             self.driver_independent_devices.clear(); //need to have a merge algorithm for hot plug
             let mut after = Vec::new();
-            self.host_driver_layer.probe(|device:DriverIndependentDeviceInstance<O>| after.push(device));
+            self.host_driver_layer
+                .probe(|device: DriverIndependentDeviceInstance<O>| after.push(device));
 
             for driver in after {
                 self.new_device(driver)

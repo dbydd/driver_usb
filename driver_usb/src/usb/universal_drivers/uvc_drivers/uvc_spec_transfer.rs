@@ -58,7 +58,7 @@ impl UVCStreamControlBlock {
             ptr::write_bytes(
                 self as *mut UVCStreamControlBlock,
                 0u8,
-                size_of::<UVCStreamControlBlock>(),
+                1
             )
         };
         self
